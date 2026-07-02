@@ -1,4 +1,4 @@
-﻿using Catalog.API.Models;
+using Catalog.API.Models;
 using Marten.Pagination;
 
 namespace Catalog.API.Products.GetProducts;
