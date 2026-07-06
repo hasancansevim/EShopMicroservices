@@ -1,12 +1,10 @@
-using BuildingBlocks.Behaviors;
-using FluentValidation;
-using System.Reflection;
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
 var assembly = typeof(Program).Assembly;
+
+builder.Services.AddCarter();
 
 builder.Services.AddMediatR(cfg =>
 {
@@ -20,9 +18,19 @@ builder.Services.AddValidatorsFromAssembly(assembly);
 builder.Services.AddMarten(options =>
 {
     options.Connection(builder.Configuration.GetConnectionString("Database")!);
-});
+}).UseLightweightSessions();
 
-builder.Services.AddCarter();
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.InitializeMartenWith<CatalogInitialData>();
+}
+
+builder.Services.AddExceptionHandler<CustomExceptionHandler>();
+
+builder.Services.AddHealthChecks()
+    .AddNpgSql(builder.Configuration.GetConnectionString("Database")!);
+
+
 
 var app = builder.Build();
 
@@ -31,5 +39,10 @@ var app = builder.Build();
 app.UseExceptionHandler(options => { });
 
 app.MapCarter();
+
+app.UseHealthChecks("/health",new HealthCheckOptions
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
 
 app.Run();
